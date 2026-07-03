@@ -1,4 +1,3 @@
-```markdown
 # UART
 
 A simple UART implementation, written in Verilog.
@@ -23,22 +22,25 @@ $> sudo apt-get install iverilog gtkwave
 ## Simulation
 
 **TX only:**
+
 ```
-$> iverilog -g2012 -o uart_tx_sim rtl/uart_tx.v rtl/tb/uart_tx_tb.v
+$> iverilog -g2012 -o uart_tx_sim uart_tx.v uart_tx_tb.v
 $> vvp uart_tx_sim
 $> gtkwave uart_tx.vcd
 ```
 
-**Loopback — single-sample RX (TX → RX):**
+**Loopback — single-sample RX:**
+
 ```
-$> iverilog -g2012 -o uart_loopback_tb rtl/uart_tx.v rtl/uart_rx_single_sample.v rtl/tb/uart_loopback_tb.v
+$> iverilog -g2012 -o uart_loopback_tb uart_loopback_tb.v uart_tx.v uart_rx_single_sample.v
 $> vvp uart_loopback_tb
 $> gtkwave uart_loopback_tb.vcd
 ```
 
-**Loopback — oversampled RX (TX → RX):**
+**Loopback — oversampled RX:**
+
 ```
-$> iverilog -g2012 -o uart_loopback_oversampled_tb rtl/uart_tx.v rtl/uart_rx_oversampled.v rtl/tb/uart_loopback_oversampled_tb.v
+$> iverilog -g2012 -o uart_loopback_oversampled_tb uart_loopback_oversampled_tb.v uart_tx.v uart_rx_oversampled.v
 $> vvp uart_loopback_oversampled_tb
 $> gtkwave uart_loopback_oversampled_tb.vcd
 ```
@@ -51,16 +53,16 @@ The transmitter module.
 
 ```
 module uart_tx #(
-    parameter CLK_HZ        = 100_000_000, // System clock frequency.
-    parameter BAUD_RATE     = 9600,        // Target UART baud rate.
-    parameter PAYLOAD_BITS  = 8            // Number of data bits per UART packet.
+    parameter CLK_HZ        = 100_000_000,
+    parameter BAUD_RATE     = 9600,
+    parameter PAYLOAD_BITS  = 8
 )(
-    input                     clk,      // Top level system clock input.
-    input                     reset,    // Active high synchronous reset.
-    input                     tx_en,    // Send the data on tx_data.
-    input  [PAYLOAD_BITS-1:0] tx_data,  // The data to be sent.
-    output reg                tx_out,   // UART transmit pin.
-    output reg                tx_busy   // Module busy sending previous item.
+    input                     clk,
+    input                     reset,
+    input                     tx_en,
+    input  [PAYLOAD_BITS-1:0] tx_data,
+    output reg                tx_out,
+    output reg                tx_busy
 );
 ```
 
@@ -72,16 +74,16 @@ The receiver module — single-sample (non-oversampled) version.
 
 ```
 module uart_rx_single #(
-    parameter CLK_HZ        = 100_000_000, // System clock frequency.
-    parameter BAUD_RATE     = 9600,        // Target UART baud rate.
-    parameter PAYLOAD_BITS  = 8            // Number of data bits per UART packet.
+    parameter CLK_HZ        = 100_000_000,
+    parameter BAUD_RATE     = 9600,
+    parameter PAYLOAD_BITS  = 8
 )(
-    input                         clk,         // Top level system clock input.
-    input                         reset,       // Active high synchronous reset.
-    input                         rx_in,       // UART receive pin.
-    output reg [PAYLOAD_BITS-1:0] rx_out,      // Received byte.
-    output reg                    rx_valid,    // High when rx_out holds a valid received byte.
-    output reg                    frame_error  // High when stop bit is invalid.
+    input                         clk,
+    input                         reset,
+    input                         rx_in,
+    output reg [PAYLOAD_BITS-1:0] rx_out,
+    output reg                    rx_valid,
+    output reg                    frame_error
 );
 ```
 
@@ -93,16 +95,16 @@ The receiver module — 16x oversampled version.
 
 ```
 module uart_rx_oversampled #(
-    parameter CLK_HZ        = 100_000_000, // System clock frequency.
-    parameter BAUD_RATE     = 9600,        // Target UART baud rate.
-    parameter PAYLOAD_BITS  = 8            // Number of data bits per UART packet.
+    parameter CLK_HZ        = 100_000_000,
+    parameter BAUD_RATE     = 9600,
+    parameter PAYLOAD_BITS  = 8
 )(
-    input                         clk,         // Top level system clock input.
-    input                         reset,       // Active high synchronous reset.
-    input                         rx_in,       // UART receive pin.
-    output reg [PAYLOAD_BITS-1:0] rx_out,      // Received byte.
-    output reg                    rx_valid,    // High when rx_out holds a valid received byte.
-    output reg                    frame_error  // High when stop bit is invalid.
+    input                         clk,
+    input                         reset,
+    input                         rx_in,
+    output reg [PAYLOAD_BITS-1:0] rx_out,
+    output reg                    rx_valid,
+    output reg                    frame_error
 );
 ```
 
@@ -111,4 +113,3 @@ Implemented as a 4-state Moore FSM: `IDLE → START → DATA → STOP`. Samples 
 ## What's Next
 
 * FPGA integration — pin constraints, reset polarity, and clock frequency adjustments
-```
