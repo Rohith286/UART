@@ -29,11 +29,18 @@ $> vvp uart_tx_sim
 $> gtkwave uart_tx.vcd
 ```
 
-**Loopback (TX → RX):**
+**Loopback — single-sample RX (TX → RX):**
 ```
 $> iverilog -g2012 -o uart_loopback_tb rtl/uart_tx.v rtl/uart_rx_single_sample.v rtl/tb/uart_loopback_tb.v
 $> vvp uart_loopback_tb
 $> gtkwave uart_loopback_tb.vcd
+```
+
+**Loopback — oversampled RX (TX → RX):**
+```
+$> iverilog -g2012 -o uart_loopback_oversampled_tb rtl/uart_tx.v rtl/uart_rx_oversampled.v rtl/tb/uart_loopback_oversampled_tb.v
+$> vvp uart_loopback_oversampled_tb
+$> gtkwave uart_loopback_oversampled_tb.vcd
 ```
 
 ## Modules
@@ -69,19 +76,39 @@ module uart_rx_single #(
     parameter BAUD_RATE     = 9600,        // Target UART baud rate.
     parameter PAYLOAD_BITS  = 8            // Number of data bits per UART packet.
 )(
-    input                     clk,         // Top level system clock input.
-    input                     reset,       // Active high synchronous reset.
-    input                     rx_in,       // UART receive pin.
-    output reg [PAYLOAD_BITS-1:0] rx_out,  // Received byte.
-    output reg                rx_valid,    // High when rx_out holds a valid received byte.
-    output reg                frame_error  // High when stop bit is invalid.
+    input                         clk,         // Top level system clock input.
+    input                         reset,       // Active high synchronous reset.
+    input                         rx_in,       // UART receive pin.
+    output reg [PAYLOAD_BITS-1:0] rx_out,      // Received byte.
+    output reg                    rx_valid,    // High when rx_out holds a valid received byte.
+    output reg                    frame_error  // High when stop bit is invalid.
 );
 ```
 
 Implemented as a 4-state Moore FSM: `IDLE → START → DATA → STOP`. Samples each bit at the center of the bit-period. Includes start-bit glitch validation (re-samples `rx_in` at the mid-point of START and returns to IDLE if the line went back high) and frame error detection (`frame_error` fires if the stop bit is not high, preventing downstream logic from latching corrupted data).
 
+### `uart_rx_oversampled`
+
+The receiver module — 16x oversampled version.
+
+```
+module uart_rx_oversampled #(
+    parameter CLK_HZ        = 100_000_000, // System clock frequency.
+    parameter BAUD_RATE     = 9600,        // Target UART baud rate.
+    parameter PAYLOAD_BITS  = 8            // Number of data bits per UART packet.
+)(
+    input                         clk,         // Top level system clock input.
+    input                         reset,       // Active high synchronous reset.
+    input                         rx_in,       // UART receive pin.
+    output reg [PAYLOAD_BITS-1:0] rx_out,      // Received byte.
+    output reg                    rx_valid,    // High when rx_out holds a valid received byte.
+    output reg                    frame_error  // High when stop bit is invalid.
+);
+```
+
+Implemented as a 4-state Moore FSM: `IDLE → START → DATA → STOP`. Samples `rx_in` at the 7/16 point of each bit-period (center of the bit window) for improved tolerance to clock drift and baud rate mismatch between transmitter and receiver. Includes start-bit glitch validation and frame error detection.
+
 ## What's Next
 
-* `uart_rx` — oversampled receiver with 16x sub-tick sampling for clock-drift tolerance
 * FPGA integration — pin constraints, reset polarity, and clock frequency adjustments
 ```
